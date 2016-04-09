@@ -1,0 +1,39 @@
+#!/bin/sh
+# vim: set ft=sh
+
+set -e
+test -z $DEBUG || set -x
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+source=$1
+
+if [ -z "$source" ]; then
+    echo "usage: $0 <path/to/source>"
+    exit 1
+fi
+
+payload=$(mktemp /tmp/resource-out.XXXXXX)
+
+cat > $payload <&0
+test -z $DEBUG || cat $payload
+
+cd $source
+
+template_path="$(cat $payload|jq -r '.source.template_path')"
+
+# run packer to create AMI
+/usr/bin/packer build $template_path | tee packer.log
+
+# write AMI id as output
+ami_id=$(sed -nE 's/[a-z]+-[a-z]+-[0-9]+: (ami-[0-9a-z]+)/\1/p' packer.log)
+echo $ami_id > ami_id
+
+version="{ImageId: $(echo ${ami_id}| jq -R .)}"
+metadata="[]"
+
+jq -n "{
+    version: ${version},
+    metadata: ${metadata}
+}" >&3

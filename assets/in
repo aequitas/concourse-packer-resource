@@ -1,0 +1,26 @@
+#!/bin/sh
+# vim: set ft=sh
+
+set -e
+test -z $DEBUG || set -x
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+destination=$1
+
+if [ -z "$destination" ]; then
+  echo "usage: $0 <path/to/destination>" >&2
+  exit 1
+fi
+
+payload=$(mktemp /tmp/resource-in.XXXXXX)
+
+cat > $payload <&0
+
+# TODO
+
+jq -n "{
+  version: {ImageId: $(echo ${ami_id}| jq -R .)},
+  metadata: $(echo ${metadata}| jq .)
+}" >&3
