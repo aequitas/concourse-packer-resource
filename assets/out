@@ -14,17 +14,28 @@ class PackerResource(Resource):
         """Packer build."""
 
         template_path = params['template_path']
+        build_vars = params.get('build_vars', {})
+        build_vars_from_file = params.get('build_vars_from_file', {})
 
-        cmd = ['packer', 'build', '-machine-readable', template_path]
+        # read build var values from files
+        for k, build_var_file in build_vars_from_file.items():
+            with open(build_var_file) as f:
+                build_vars[k] = f.read().strip()
+
+        # compose packer command
+        cmd = ['packer', 'build', '-machine-readable']
+        for k, v in build_vars.items():
+            cmd += ['-var=%s=%s' % (k, v)]
+        cmd.append(template_path)
 
         proc = subprocess.Popen(cmd, stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE)
         output = ""
         while proc.poll() is None:
-            line = proc.stdout.readline()
+            line = proc.stdout.readline().decode('utf8')
             if line:
                 print(line.strip(), file=sys.stderr)
-                output += line.decode('utf8')
+                output += line
 
         AMI_MATCH = 'artifact,0,id,(?P<region>[\w-]+):(?P<ami_id>[\w-]+)'
         version_match = re.search(AMI_MATCH, output, re.DOTALL)

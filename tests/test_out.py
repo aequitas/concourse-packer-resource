@@ -37,17 +37,28 @@ def test_fail(tmpdir):
     with pytest.raises(Exception):
         cmd('out', {}, [str(tmpdir)], params=params)
 
-def test_passing_variabels(tmpdir):
-    """Test passing build variables from params."""
+def test_passing_build_vars(tmpdir):
+    """Test is build vars are passed."""
 
     params = {
-        'template_path': 'src/vars.json',
+        'template_path': 'src/build-vars.json',
         'build_vars': {
             'role': 'test',
         }
     }
 
-    output = cmd('out', {}, [str(tmpdir)], params=params)
+    assert cmd('out', {}, [str(tmpdir)], params=params)
 
-    assert output.get('version').get('ImageId') == 'ami-01234567'
-    assert output.get('metadata')[0].get('name') == 'tag_role'
+def test_passing_build_vars_from_files(tmpdir):
+    """Test is build vars can be read from files."""
+
+    tmpdir.join('ami_id').write('ami-12345678')
+
+    params = {
+        'template_path': 'src/build-vars-from-file.json',
+        'build_vars_from_file': {
+            'source_ami': 'ami_id',
+        }
+    }
+
+    assert cmd('out', {}, [str(tmpdir)], params=params)
