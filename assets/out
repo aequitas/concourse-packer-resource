@@ -17,10 +17,14 @@ class PackerResource(Resource):
 
         cmd = ['packer', 'build', '-machine-readable', template_path]
 
-        try:
-            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('utf8')
-        finally:
-            print(output, file=sys.stderr)
+        proc = subprocess.Popen(cmd, stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE)
+        output = ""
+        while proc.poll() is None:
+            line = proc.stdout.readline()
+            if line:
+                print(line.strip(), file=sys.stderr)
+                output += line.decode('utf8')
 
         AMI_MATCH = 'artifact,0,id,(?P<region>[\w-]+):(?P<ami_id>[\w-]+)'
         version_match = re.search(AMI_MATCH, output, re.DOTALL)

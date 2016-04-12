@@ -15,6 +15,18 @@ def test_out(tmpdir):
     assert output.get('version').get('ImageId') == 'ami-01234567'
     assert output.get('metadata')[0].get('name') == 'tag_version'
 
+def test_output(tmpdir, capfd):
+    """Test output to stderr."""
+
+    params = {
+        'template_path': 'src/ami.json',
+    }
+
+    cmd('out', {}, [str(tmpdir)], params=params)
+
+    out, err = capfd.readouterr()
+    assert '1460473753,,ui,say,amazon-ebs output will be in this color.' in err
+
 def test_fail(tmpdir):
     """Test packer error is passed."""
 
