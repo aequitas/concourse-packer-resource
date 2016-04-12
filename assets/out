@@ -26,7 +26,7 @@ cd "$source"
 export PACKER_LOG=1
 export PACKER_LOG_PATH=packer.log
 
-template_path="$(jq -r '.source.template_path' < "$payload")"
+template_path="$(jq -r '.params.template_path' < "$payload")"
 
 # run packer to create AMI
 packer build -machine-readable "$template_path" | tee build.log
