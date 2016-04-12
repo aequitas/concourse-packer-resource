@@ -10,7 +10,7 @@ from resource import Resource
 class PackerResource(Resource):
     """Resource implementation for packer."""
 
-    def out_cmd(self, workdir, source, params):
+    def out_cmd(self, source, params):
         """Packer build."""
 
         template_path = params['template_path']

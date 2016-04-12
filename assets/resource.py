@@ -48,7 +48,8 @@ class Resource:
         elif command_name == 'in':
             response = self.in_cmd(command_argument[0], source, params, version)
         elif command_name == 'out':
-            response = self.out_cmd(command_argument[0], source, params)
+            os.chdir(command_argument[0])
+            response = self.out_cmd(source, params)
         else:
             raise Exception('invalid invocation')
 
