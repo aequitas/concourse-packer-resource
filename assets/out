@@ -17,8 +17,10 @@ class PackerResource(Resource):
 
         cmd = ['packer', 'build', '-machine-readable', template_path]
 
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('utf8')
-        print(output, file=sys.stderr)
+        try:
+            output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('utf8')
+        finally:
+            print(output, file=sys.stderr)
 
         AMI_MATCH = 'artifact,0,id,(?P<region>[\w-]+):(?P<ami_id>[\w-]+)'
         version_match = re.search(AMI_MATCH, output, re.DOTALL)
