@@ -2,7 +2,7 @@
 # vim: set ft=sh
 
 set -e
-test -z $DEBUG || set -x
+test -z "$DEBUG" || set -x
 
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
@@ -16,21 +16,23 @@ fi
 
 payload=$(mktemp /tmp/resource-out.XXXXXX)
 
-cat > $payload <&0
-test -z $DEBUG || cat $payload
+cat > "$payload" <&0
+test -z "$DEBUG" || cat "$payload"
 
-cd $source
+cd "$source"
 
-template_path="$(cat $payload|jq -r '.source.template_path')"
+export PACKER_LOG=1
+export PACKER_LOG_PATH=packer.log
+
+template_path="$(jq -r '.source.template_path' < "$payload")"
 
 # run packer to create AMI
-/usr/bin/packer build $template_path | tee packer.log
+packer build -machine-readable "$template_path" | tee build.log
 
 # write AMI id as output
-ami_id=$(sed -nE 's/[a-z]+-[a-z]+-[0-9]+: (ami-[0-9a-z]+)/\1/p' packer.log)
-echo $ami_id > ami_id
+ami_id="$(grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d: -f2)"
 
-version="{ImageId: $(echo ${ami_id}| jq -R .)}"
+version="{ImageId: $(echo "$ami_id"| jq -R .)}"
 metadata="[]"
 
 jq -n "{
