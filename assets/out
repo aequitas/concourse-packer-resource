@@ -1,7 +1,9 @@
 #!/bin/sh
 # vim: set ft=sh
 
-set -e
+# exit if any command fails, even in pipes
+set -e -o pipefail
+
 test -z "$DEBUG" || set -x
 
 exec 3>&1 # make stdout available as fd 3 for the result
