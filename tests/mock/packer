@@ -8,6 +8,7 @@ assert os.path.exists('/usr/local/bin/packer')
 
 log_lookup = {
     'src/ami.json': 'build-ami.log',
+    'src/vars.json': 'build-vars.log',
 }
 
 if 'build' in sys.argv and '-machine-readable' in sys.argv:

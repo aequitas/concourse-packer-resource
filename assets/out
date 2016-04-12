@@ -1,43 +1,43 @@
-#!/bin/sh
-# vim: set ft=sh
+#!/usr/bin/env python3
 
-# exit if any command fails, even in pipes
-set -e -o pipefail
+import logging as log
+import re
+import subprocess
+from resource import Resource
 
-test -z "$DEBUG" || set -x
 
-exec 3>&1 # make stdout available as fd 3 for the result
-exec 1>&2 # redirect all output to stderr for logging
+class PackerResource(Resource):
+    """Resource implementation for packer."""
+    def out_cmd(self, workdir, source, params):
+        """Packer build."""
 
-source=$1
+        template_path = params['template_path']
 
-if [ -z "$source" ]; then
-    echo "usage: $0 <path/to/source>"
-    exit 1
-fi
+        cmd = ['packer', 'build', '-machine-readable', template_path]
 
-payload=$(mktemp /tmp/resource-out.XXXXXX)
+        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode('utf8')
 
-cat > "$payload" <&0
-test -z "$DEBUG" || cat "$payload"
+        AMI_MATCH = 'artifact,0,id,(?P<region>[\w-]+):(?P<ami_id>[\w-]+)'
+        version_match = re.search(AMI_MATCH, output, re.DOTALL)
+        if not version_match:
+            raise Exception('no AMI id in output')
+        region, ami_id = version_match.groups()
 
-cd "$source"
+        metadata = []
 
-export PACKER_LOG=1
-export PACKER_LOG_PATH=packer.log
+        TAG_MATCH = 'Adding tag: "(?P<name>[^"]+)": "(?P<value>[^"]*)"'
+        for tag in re.finditer(TAG_MATCH, output, re.DOTALL):
+            meta_tag = tag.groupdict()
+            meta_tag['name'] = 'tag_' + meta_tag['name']
+            metadata.append(meta_tag)
 
-template_path="$(jq -r '.params.template_path' < "$payload")"
+        return {
+            'version': {
+                'ImageId': ami_id,
+                'Region': region,
+            },
+            'metadata': metadata,
+        }
 
-# run packer to create AMI
-packer build -machine-readable "$template_path" | tee build.log
-
-# write AMI id as output
-ami_id="$(grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d: -f2)"
-
-version="{ImageId: $(echo "$ami_id"| jq -R .)}"
-metadata="[]"
-
-jq -n "{
-    version: ${version},
-    metadata: ${metadata}
-}" >&3
+if __name__ == '__main__':
+    print(PackerResource().run('out'))

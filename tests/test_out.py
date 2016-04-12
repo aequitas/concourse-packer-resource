@@ -13,6 +13,7 @@ def test_out(tmpdir):
     output = cmd('out', {}, [str(tmpdir)], params=params)
 
     assert output.get('version').get('ImageId') == 'ami-01234567'
+    assert output.get('metadata')[0].get('name') == 'tag_version'
 
 def test_fail(tmpdir):
     """Test packer error is passed."""
@@ -23,3 +24,18 @@ def test_fail(tmpdir):
 
     with pytest.raises(Exception):
         cmd('out', {}, [str(tmpdir)], params=params)
+
+def test_passing_variabels(tmpdir):
+    """Test passing build variables from params."""
+
+    params = {
+        'template_path': 'src/vars.json',
+        'build_vars': {
+            'role': 'test',
+        }
+    }
+
+    output = cmd('out', {}, [str(tmpdir)], params=params)
+
+    assert output.get('version').get('ImageId') == 'ami-01234567'
+    assert output.get('metadata')[0].get('name') == 'tag_role'
