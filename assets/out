@@ -39,6 +39,7 @@ class PackerResource(Resource):
             cmd += ['-var=%s=%s' % (k, v)]
         cmd.append(template_path)
 
+        log.info('starting packer build')
         proc = subprocess.Popen(cmd, stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE)
         output = ""
@@ -50,6 +51,9 @@ class PackerResource(Resource):
                 out = human_readable_output(line.strip())
                 if out:
                     print(out, file=sys.stderr)
+        if proc.returncode != 0:
+            log.error('packer build failed.')
+            sys.exit(1)
 
         AMI_MATCH = 'artifact,0,id,(?P<region>[\w-]+):(?P<ami_id>[\w-]+)'
         version_match = re.search(AMI_MATCH, output, re.DOTALL)
