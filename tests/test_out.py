@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from helpers import cmd
@@ -25,7 +27,7 @@ def test_output(tmpdir, capfd):
     cmd('out', {}, [str(tmpdir)], params=params)
 
     out, err = capfd.readouterr()
-    assert '1460473753,,ui,say,amazon-ebs output will be in this color.' in err
+    assert re.search('^amazon-ebs output will be in this color\.$', err, re.MULTILINE)
 
 def test_fail(tmpdir):
     """Test packer error is passed."""

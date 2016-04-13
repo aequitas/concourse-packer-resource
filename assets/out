@@ -7,6 +7,17 @@ import sys
 from resource import Resource
 
 
+def human_readable_output(line):
+    """Convert packer machine readable output to human readable output."""
+    if not line:
+        return None
+    ts, target, out_type, data = line.split(',', 3)
+    if out_type == 'ui':
+        ui_type, output = data.split(',', 1)
+        return output.replace('%!(PACKER_COMMA). ', ',')
+    else:
+        return None
+
 class PackerResource(Resource):
     """Resource implementation for packer."""
 
@@ -34,8 +45,11 @@ class PackerResource(Resource):
         while proc.poll() is None:
             line = proc.stdout.readline().decode('utf8')
             if line:
-                print(line.strip(), file=sys.stderr)
                 output += line
+
+                out = human_readable_output(line.strip())
+                if out:
+                    print(out, file=sys.stderr)
 
         AMI_MATCH = 'artifact,0,id,(?P<region>[\w-]+):(?P<ami_id>[\w-]+)'
         version_match = re.search(AMI_MATCH, output, re.DOTALL)
