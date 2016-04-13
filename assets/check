@@ -8,8 +8,18 @@ exec 1>&2 # redirect all output to stderr for logging
 
 payload=$(mktemp /tmp/resource-check.XXXXXX)
 
-cat > $payload <&0
+cat > "$payload" <&0
 
-# TODO
+export AWS_DEFAULT_REGION=$(jq -r '.params.region // .source.region' < "$payload")
+
+name="$(jq -r '.params.name // .source.name' < "$payload")"
+
+if [ -z "$name" ]; then
+  echo "no name specified" >&2
+  exit 1
+fi
+
+# get some metadata
+versions=$(aws ec2 describe-images --filter Name=name,Values="${name}" | jq -r '.Images|map({ImageId})')
 
 jq -n "${versions}" >&3

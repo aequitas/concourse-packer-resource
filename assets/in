@@ -20,10 +20,18 @@ cat > "$payload" <&0
 
 ami_id="$(jq -r '.version|.ImageId' < "$payload")"
 region="$(jq -r '.version|.Region' < "$payload")"
+
+export AWS_DEFAULT_REGION="$region"
+
+# wait for image to be available
+aws ec2 wait image-available --image-ids "$ami_id"
+
 echo "$ami_id" > "$destination/id"
 echo "$region" > "$destination/region"
 
-metadata="[]"
+# get some metadata
+metadata=$(aws ec2 describe-images --image-ids "$ami_id" | \
+    jq -r '.Images[0]|{Name,CreationDate,OwnerId}|to_entries|map({"name":.key, "value":.value})')
 
 jq -n "{
   version: {ImageId: $(echo "$ami_id"| jq -R .)},
