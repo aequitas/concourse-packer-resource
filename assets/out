@@ -14,7 +14,7 @@ def human_readable_output(line):
     ts, target, out_type, data = line.split(',', 3)
     if out_type == 'ui':
         ui_type, output = data.split(',', 1)
-        return output.replace('%!(PACKER_COMMA). ', ',')
+        return output.replace('%!(PACKER_COMMA)', ',')
     else:
         return None
 

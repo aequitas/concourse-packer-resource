@@ -27,7 +27,9 @@ def test_output(tmpdir, capfd):
     cmd('out', {}, [str(tmpdir)], params=params)
 
     out, err = capfd.readouterr()
+    print(err)
     assert re.search('^amazon-ebs output will be in this color\.$', err, re.MULTILINE)
+    assert '==> amazon-ebs: Force Deregister flag found, skipping prevalidating AMI Name' in err
 
 def test_fail(tmpdir):
     """Test packer error is passed."""
