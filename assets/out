@@ -50,7 +50,7 @@ class PackerResource(Resource):
 
                 out = human_readable_output(line.strip())
                 if out:
-                    print(out, file=sys.stderr)
+                    log.info(out)
         if proc.returncode != 0:
             log.error('packer build failed.')
             sys.exit(1)

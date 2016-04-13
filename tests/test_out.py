@@ -1,3 +1,4 @@
+import os
 import re
 
 import pytest
@@ -24,7 +25,10 @@ def test_output(tmpdir, capfd):
         'template_path': 'src/ami.json',
     }
 
+    # disable test debug logging to get normal output
+    del os.environ['RESOURCE_DEBUG']
     cmd('out', {}, [str(tmpdir)], params=params)
+    os.environ['RESOURCE_DEBUG'] = 'true'
 
     out, err = capfd.readouterr()
     print(err)
